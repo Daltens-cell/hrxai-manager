@@ -1,0 +1,35 @@
+# GitHub에 올리면 Windows exe를 자동으로 빌드함
+# 결과: 저장소 → Actions → 최신 실행 → Artifacts의 HRxAI-Manager-exe 다운로드
+# 태그(v1.0.0 등)를 올리면 Releases에도 exe가 첨부됨
+name: build-exe
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: pyinstaller --noconfirm --onefile --windowed --name HRxAI-Manager --paths app app/main.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HRxAI-Manager-exe
+          path: dist/HRxAI-Manager.exe
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/HRxAI-Manager.exe
